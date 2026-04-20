@@ -1,37 +1,68 @@
-# Task Management API
+# Task Management API v2.0
 
-A RESTful API for managing tasks with user authentication, built with Node.js, Express.js, PostgreSQL, and MongoDB.
+**Event-Driven Notifications & Advanced Data Handling**
+
+A comprehensive RESTful API for task management with real-time reminders, webhook notifications, categories, tags, and advanced filtering capabilities. Built with Node.js, Express.js, PostgreSQL, MongoDB, Redis, and BullMQ.
+
+## 🆕 What's New in v2.0 (Assignment 3)
+
+### ✨ New Features
+
+1. **Real-Time Task Reminders**
+   - Automated reminders triggered 1 hour before task due date
+   - Powered by BullMQ and Redis for reliable job scheduling
+   - Intelligent handling of task updates and completions
+   - Console logging and optional webhook notifications
+
+2. **Task Categorization**
+   - Create custom categories with names, descriptions, and colors
+   - User-specific categories with full CRUD operations
+   - Filter tasks by category
+   - Associate tasks with categories
+
+3. **Task Tagging System**
+   - Add multiple free-form tags to tasks
+   - Filter tasks by single or multiple tags
+   - Get list of all used tags
+   - Maximum 10 tags per task
+
+4. **Webhook Integration**
+   - Automated webhook notifications when tasks are completed
+   - Configurable webhook URL via environment variables
+   - Exponential backoff retry logic (3 attempts)
+   - Detailed payload with task information
+
+5. **Advanced Task Filtering**
+   - Filter by category, tags, and status
+   - Combine multiple filters
+   - Efficient database queries with indexes
 
 ## 🚀 Features
 
-- **User Management**
-  - User registration with email and hashed password
-  - User login with JWT authentication
-  - Protected user profile endpoint
+### Core Features (v1.0)
+- ✅ User authentication with JWT
+- ✅ Password hashing with bcrypt
+- ✅ Task CRUD operations
+- ✅ User-specific task isolation
+- ✅ Input validation with Joi
+- ✅ Global error handling
+- ✅ RESTful API design
 
-- **Task Management**
-  - Create, read, update, and delete tasks
-  - Tasks associated with specific users
-  - User-specific task access control
-  - Task statuses: pending/completed
-
-- **Security**
-  - JWT-based authentication
-  - Password hashing with bcrypt
-  - Protected routes
-  - Input validation
-
-- **Database**
-  - PostgreSQL for user data
-  - MongoDB for task data
+### Advanced Features (v2.0)
+- ✅ Real-time task reminders (BullMQ)
+- ✅ Task categories with colors
+- ✅ Multi-tag support
+- ✅ Advanced filtering
+- ✅ Webhook notifications with retry logic
+- ✅ Event-driven architecture
+- ✅ Reminder rescheduling on task updates
 
 ## 📋 Prerequisites
 
-Before running this application, make sure you have the following installed:
-
-- **Node.js** (v14 or higher) - [Download](https://nodejs.org/)
+- **Node.js** (v18 or higher) - [Download](https://nodejs.org/)
 - **PostgreSQL** (v12 or higher) - [Download](https://www.postgresql.org/download/)
 - **MongoDB** (v4.4 or higher) - [Download](https://www.mongodb.com/try/download/community)
+- **Redis** (v6 or higher) - [Download](https://redis.io/download/) - **NEW for v2.0**
 - **npm** or **yarn** package manager
 
 ## 🔧 Installation & Setup
@@ -49,10 +80,9 @@ cd task-management-api
 npm install
 ```
 
-### 3. Set Up PostgreSQL
+### 3. Set Up Databases
 
-#### Option A: Using PostgreSQL Command Line
-
+#### PostgreSQL
 ```bash
 # Login to PostgreSQL
 psql -U postgres
@@ -60,48 +90,46 @@ psql -U postgres
 # Create database
 CREATE DATABASE taskmanagement;
 
-# Exit
-\q
-```
-
-#### Option B: Using the provided SQL script
-
-```bash
+# Or use the SQL script
 psql -U postgres -f database/setup.sql
 ```
 
-### 4. Set Up MongoDB
-
-MongoDB should be running on your local machine. Start MongoDB:
-
-**On Linux/Mac:**
+#### MongoDB
 ```bash
+# Start MongoDB
+# On Linux/Mac:
 sudo systemctl start mongod
-# or
-brew services start mongodb-community
-```
-
-**On Windows:**
-```bash
+# On Windows:
 net start MongoDB
-```
 
-Verify MongoDB is running:
-```bash
+# Verify
 mongosh
-# or
-mongo
 ```
 
-### 5. Configure Environment Variables
+#### Redis (NEW)
+```bash
+# On Linux:
+sudo systemctl start redis
 
-Create a `.env` file in the root directory:
+# On Mac:
+brew services start redis
+
+# On Windows:
+# Download from https://github.com/microsoftarchive/redis/releases
+# Or use Docker
+
+# Verify
+redis-cli ping
+# Should return: PONG
+```
+
+### 4. Configure Environment Variables
 
 ```bash
 cp .env.example .env
 ```
 
-Edit the `.env` file with your credentials:
+Edit `.env` file:
 
 ```env
 # Server Configuration
@@ -113,21 +141,36 @@ PG_HOST=localhost
 PG_PORT=5432
 PG_DATABASE=taskmanagement
 PG_USER=postgres
-PG_PASSWORD=your_postgres_password
+PG_PASSWORD=your_actual_password
 
 # MongoDB Configuration
 MONGO_URI=mongodb://localhost:27017/taskmanagement
 
+# Redis Configuration (NEW)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+
 # JWT Configuration
-JWT_SECRET=your_super_secret_jwt_key_change_this_in_production
+JWT_SECRET=generate_a_strong_random_secret_here
 JWT_EXPIRE=7d
+
+# Webhook Configuration (NEW)
+WEBHOOK_URL=https://webhook.site/your-unique-url
+WEBHOOK_RETRY_ATTEMPTS=3
+WEBHOOK_RETRY_DELAY=1000
+
+# Notification Configuration (NEW)
+REMINDER_TIME_BEFORE_DUE=60
 ```
 
-⚠️ **Important:** Replace `your_postgres_password` with your actual PostgreSQL password and change the `JWT_SECRET` to a secure random string.
+**Important:**
+- Get your webhook URL from [webhook.site](https://webhook.site/)
+- `REMINDER_TIME_BEFORE_DUE` is in minutes (default: 60 = 1 hour before due date)
 
-### 6. Start the Application
+### 5. Start the Application
 
-**Development mode (with auto-restart):**
+**Development mode:**
 ```bash
 npm run dev
 ```
@@ -137,16 +180,40 @@ npm run dev
 npm start
 ```
 
-The server will start on `http://localhost:5000`
-
 You should see:
 ```
 ✅ Connected to PostgreSQL database
 ✅ Connected to MongoDB database
+✅ Connected to Redis
 ✅ Users table created/verified
-Server running on port 5000
-Environment: development
-API URL: http://localhost:5000
+✅ Reminder service initialized
+============================================================
+🚀 Task Management API v2.0
+============================================================
+📍 Server: http://localhost:5000
+📍 Environment: development
+✨ Features:
+   - User Authentication (JWT)
+   - Task Management (CRUD)
+   - Categories & Tags
+   - Real-time Reminders (BullMQ)
+   - Webhook Notifications
+============================================================
+```
+
+### 6. Using Docker (Recommended)
+
+The easiest way to run all services:
+
+```bash
+# Start all services (PostgreSQL, MongoDB, Redis, App)
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
 ```
 
 ## 📚 API Documentation
@@ -155,55 +222,19 @@ Base URL: `http://localhost:5000/api`
 
 ### Authentication Endpoints
 
-#### 1. Register a New User
-
+#### 1. Register User
 **POST** `/api/auth/register`
 
-**Request Body:**
 ```json
 {
   "email": "user@example.com",
   "password": "password123"
 }
 ```
-
-**Success Response (201):**
-```json
-{
-  "success": true,
-  "message": "User registered successfully",
-  "data": {
-    "user": {
-      "id": 1,
-      "email": "user@example.com",
-      "createdAt": "2024-01-15T10:30:00.000Z"
-    },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  }
-}
-```
-
-**Error Response (400):**
-```json
-{
-  "success": false,
-  "message": "Validation failed",
-  "errors": [
-    {
-      "field": "email",
-      "message": "Please provide a valid email address"
-    }
-  ]
-}
-```
-
----
 
 #### 2. Login User
-
 **POST** `/api/auth/login`
 
-**Request Body:**
 ```json
 {
   "email": "user@example.com",
@@ -211,273 +242,248 @@ Base URL: `http://localhost:5000/api`
 }
 ```
 
-**Success Response (200):**
-```json
-{
-  "success": true,
-  "message": "Login successful",
-  "data": {
-    "user": {
-      "id": 1,
-      "email": "user@example.com"
-    },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  }
-}
-```
+#### 3. Get Profile
+**GET** `/api/auth/profile`
 
-**Error Response (401):**
-```json
-{
-  "success": false,
-  "message": "Invalid credentials"
-}
-```
+Headers: `Authorization: Bearer <token>`
 
 ---
 
-#### 3. Get User Profile
+### Category Endpoints (NEW)
 
-**GET** `/api/auth/profile`
+All category endpoints require authentication.
 
-**Headers:**
+#### 4. Create Category
+**POST** `/api/categories`
+
+Headers: `Authorization: Bearer <token>`
+
+```json
+{
+  "name": "Work",
+  "description": "Work-related tasks",
+  "color": "#3B82F6"
+}
 ```
-Authorization: Bearer <your_jwt_token>
-```
 
-**Success Response (200):**
+Response:
 ```json
 {
   "success": true,
+  "message": "Category created successfully",
   "data": {
-    "user": {
-      "id": 1,
-      "email": "user@example.com",
-      "createdAt": "2024-01-15T10:30:00.000Z"
+    "category": {
+      "_id": "65a1b2c3d4e5f6g7h8i9j0k1",
+      "name": "work",
+      "description": "Work-related tasks",
+      "color": "#3B82F6",
+      "userId": 1,
+      "createdAt": "2024-01-15T10:30:00.000Z",
+      "updatedAt": "2024-01-15T10:30:00.000Z"
     }
   }
 }
 ```
 
-**Error Response (401):**
+#### 5. Get All Categories
+**GET** `/api/categories`
+
+Headers: `Authorization: Bearer <token>`
+
+#### 6. Get Category by ID
+**GET** `/api/categories/:id`
+
+#### 7. Update Category
+**PUT** `/api/categories/:id`
+
 ```json
 {
-  "success": false,
-  "message": "No token provided. Authorization denied."
+  "description": "Updated description",
+  "color": "#EF4444"
 }
 ```
 
+#### 8. Delete Category
+**DELETE** `/api/categories/:id`
+
 ---
 
-### Task Endpoints
+### Task Endpoints (Enhanced)
 
-**Note:** All task endpoints require authentication. Include the JWT token in the Authorization header:
-```
-Authorization: Bearer <your_jwt_token>
-```
-
-#### 4. Create a New Task
-
+#### 9. Create Task (Enhanced)
 **POST** `/api/tasks`
 
-**Headers:**
-```
-Authorization: Bearer <your_jwt_token>
-Content-Type: application/json
-```
+Headers: `Authorization: Bearer <token>`
 
-**Request Body:**
 ```json
 {
   "title": "Complete project documentation",
-  "description": "Write comprehensive documentation for the API",
+  "description": "Write comprehensive API documentation",
   "dueDate": "2024-12-31T23:59:59.000Z",
-  "status": "pending"
+  "status": "pending",
+  "category": "65a1b2c3d4e5f6g7h8i9j0k1",
+  "tags": ["urgent", "high-priority", "documentation"]
 }
 ```
 
-**Success Response (201):**
-```json
-{
-  "success": true,
-  "message": "Task created successfully",
-  "data": {
-    "task": {
-      "_id": "6589f1234567890abcdef123",
-      "title": "Complete project documentation",
-      "description": "Write comprehensive documentation for the API",
-      "dueDate": "2024-12-31T23:59:59.000Z",
-      "status": "pending",
-      "userId": 1,
-      "createdAt": "2024-01-15T10:30:00.000Z",
-      "updatedAt": "2024-01-15T10:30:00.000Z"
-    }
-  }
-}
+**What happens:**
+- Task is created in MongoDB
+- If due date is in future, a reminder is scheduled in BullMQ
+- Reminder will trigger 60 minutes before due date (configurable)
+
+#### 10. Get All Tasks (Enhanced with Filters)
+**GET** `/api/tasks?category=<categoryId>&tags=urgent,important&status=pending`
+
+Query Parameters:
+- `category` - Filter by category ID
+- `tags` - Filter by tags (comma-separated for multiple)
+- `status` - Filter by status (pending/completed)
+
+Example:
+```
+GET /api/tasks?tags=urgent&status=pending
+GET /api/tasks?category=65a1b2c3d4e5f6g7h8i9j0k1
+GET /api/tasks?tags=urgent,high-priority&status=pending
 ```
 
----
-
-#### 5. Get All Tasks (for authenticated user)
-
-**GET** `/api/tasks`
-
-**Headers:**
-```
-Authorization: Bearer <your_jwt_token>
-```
-
-**Success Response (200):**
-```json
-{
-  "success": true,
-  "count": 2,
-  "data": {
-    "tasks": [
-      {
-        "_id": "6589f1234567890abcdef123",
-        "title": "Complete project documentation",
-        "description": "Write comprehensive documentation for the API",
-        "dueDate": "2024-12-31T23:59:59.000Z",
-        "status": "pending",
-        "userId": 1,
-        "createdAt": "2024-01-15T10:30:00.000Z",
-        "updatedAt": "2024-01-15T10:30:00.000Z"
-      },
-      {
-        "_id": "6589f9876543210fedcba456",
-        "title": "Review code",
-        "description": "Review pull requests",
-        "dueDate": "2024-12-25T18:00:00.000Z",
-        "status": "completed",
-        "userId": 1,
-        "createdAt": "2024-01-14T09:20:00.000Z",
-        "updatedAt": "2024-01-15T14:30:00.000Z"
-      }
-    ]
-  }
-}
-```
-
----
-
-#### 6. Get Single Task by ID
-
+#### 11. Get Task by ID
 **GET** `/api/tasks/:id`
 
-**Headers:**
-```
-Authorization: Bearer <your_jwt_token>
-```
-
-**Success Response (200):**
-```json
-{
-  "success": true,
-  "data": {
-    "task": {
-      "_id": "6589f1234567890abcdef123",
-      "title": "Complete project documentation",
-      "description": "Write comprehensive documentation for the API",
-      "dueDate": "2024-12-31T23:59:59.000Z",
-      "status": "pending",
-      "userId": 1,
-      "createdAt": "2024-01-15T10:30:00.000Z",
-      "updatedAt": "2024-01-15T10:30:00.000Z"
-    }
-  }
-}
-```
-
-**Error Response (404):**
-```json
-{
-  "success": false,
-  "message": "Task not found"
-}
-```
-
-**Error Response (403):**
-```json
-{
-  "success": false,
-  "message": "Access denied. You do not have permission to access this task."
-}
-```
-
----
-
-#### 7. Update a Task
-
+#### 12. Update Task (Enhanced)
 **PUT** `/api/tasks/:id`
 
-**Headers:**
-```
-Authorization: Bearer <your_jwt_token>
-Content-Type: application/json
-```
-
-**Request Body (partial update supported):**
 ```json
 {
-  "status": "completed"
+  "status": "completed",
+  "tags": ["completed", "archived"]
 }
 ```
 
-**Success Response (200):**
+**What happens:**
+- If status changes to "completed":
+  - `completedAt` timestamp is set
+  - Scheduled reminder is cancelled
+  - Webhook is triggered to external service
+- If due date changes:
+  - Existing reminder is cancelled
+  - New reminder is scheduled
+
+#### 13. Delete Task
+**DELETE** `/api/tasks/:id`
+
+**What happens:**
+- Scheduled reminder (if any) is cancelled
+- Task is deleted from MongoDB
+
+#### 14. Get All Tags (NEW)
+**GET** `/api/tasks/tags/list`
+
+Returns all unique tags used by the authenticated user:
+
 ```json
 {
   "success": true,
-  "message": "Task updated successfully",
+  "count": 5,
   "data": {
-    "task": {
-      "_id": "6589f1234567890abcdef123",
-      "title": "Complete project documentation",
-      "description": "Write comprehensive documentation for the API",
-      "dueDate": "2024-12-31T23:59:59.000Z",
-      "status": "completed",
-      "userId": 1,
-      "createdAt": "2024-01-15T10:30:00.000Z",
-      "updatedAt": "2024-01-15T11:45:00.000Z"
-    }
+    "tags": ["urgent", "high-priority", "bug-fix", "feature", "documentation"]
   }
-}
-```
-
-**Error Response (403):**
-```json
-{
-  "success": false,
-  "message": "Access denied. You do not have permission to modify this task."
 }
 ```
 
 ---
 
-#### 8. Delete a Task
+## 🎯 Event-Driven Features
 
-**DELETE** `/api/tasks/:id`
+### 1. Real-Time Reminders
 
-**Headers:**
-```
-Authorization: Bearer <your_jwt_token>
-```
+**How it works:**
 
-**Success Response (200):**
+1. **Task Creation:**
+   ```
+   User creates task with dueDate: "2024-12-31 15:00:00"
+   ↓
+   System calculates reminder time: 60 minutes before = "2024-12-31 14:00:00"
+   ↓
+   Job is scheduled in BullMQ/Redis
+   ↓
+   At 14:00:00, reminder is triggered
+   ```
+
+2. **Reminder Output:**
+   ```
+   ⏰ ===== REMINDER TRIGGERED =====
+   Task ID: 65a1b2c3d4e5f6g7h8i9j0k1
+   User ID: 1
+   Title: Complete project documentation
+   Due Date: 2024-12-31T15:00:00.000Z
+   Triggered At: 2024-12-31T14:00:00.000Z
+   ================================
+   ```
+
+3. **Reminder sent to webhook (if configured):**
+   ```json
+   {
+     "type": "task_reminder",
+     "timestamp": "2024-12-31T14:00:00.000Z",
+     "taskId": "65a1b2c3d4e5f6g7h8i9j0k1",
+     "userId": 1,
+     "title": "Complete project documentation",
+     "dueDate": "2024-12-31T15:00:00.000Z",
+     "message": "Reminder: Task 'Complete project documentation' is due in 1 hour!"
+   }
+   ```
+
+**Intelligent Handling:**
+
+- **Task Updated:** Reminder is rescheduled with new due date
+- **Task Completed:** Reminder is cancelled
+- **Task Deleted:** Reminder is cancelled
+- **Reminder time in past:** Reminder is not scheduled
+
+### 2. Webhook Notifications
+
+**Triggered when:** Task status changes to "completed"
+
+**Payload sent to webhook:**
 ```json
 {
-  "success": true,
-  "message": "Task deleted successfully",
-  "data": {}
+  "event": "task.completed",
+  "timestamp": "2024-01-15T16:45:00.000Z",
+  "data": {
+    "taskId": "65a1b2c3d4e5f6g7h8i9j0k1",
+    "title": "Complete project documentation",
+    "description": "Write comprehensive API documentation",
+    "userId": 1,
+    "completedAt": "2024-01-15T16:45:00.000Z",
+    "createdAt": "2024-01-10T09:00:00.000Z",
+    "dueDate": "2024-12-31T23:59:59.000Z",
+    "category": "65a1b2c3d4e5f6g7h8i9j0k1",
+    "tags": ["urgent", "documentation"]
+  }
 }
 ```
 
-**Error Response (403):**
-```json
-{
-  "success": false,
-  "message": "Access denied. You do not have permission to delete this task."
-}
+**Retry Logic:**
+
+```
+Attempt 1: Failed (500 Server Error)
+↓ Wait 1000ms
+Attempt 2: Failed (Timeout)
+↓ Wait 2000ms (exponential backoff)
+Attempt 3: Failed
+↓
+Give up, log error
+```
+
+**Console Output:**
+```
+🔔 ===== WEBHOOK TRIGGERED =====
+URL: https://webhook.site/abc123
+Attempt: 1/4
+Payload: {...}
+✅ Webhook sent successfully
+Status: 200
+================================
 ```
 
 ---
@@ -489,160 +495,354 @@ task-management-api/
 ├── src/
 │   ├── config/
 │   │   ├── database.js          # PostgreSQL connection
-│   │   └── mongodb.js           # MongoDB connection
+│   │   ├── mongodb.js           # MongoDB connection
+│   │   └── redis.js             # Redis connection (NEW)
 │   ├── controllers/
 │   │   ├── authController.js    # Authentication logic
-│   │   └── taskController.js    # Task CRUD logic
+│   │   ├── taskController.js    # Task CRUD + filtering (ENHANCED)
+│   │   └── categoryController.js # Category management (NEW)
 │   ├── middleware/
-│   │   ├── auth.js              # JWT authentication middleware
-│   │   ├── validate.js          # Validation middleware
+│   │   ├── auth.js              # JWT authentication
+│   │   ├── validate.js          # Request validation
 │   │   └── errorHandler.js      # Global error handler
 │   ├── models/
 │   │   ├── User.js              # PostgreSQL User model
-│   │   └── Task.js              # MongoDB Task model
+│   │   ├── Task.js              # MongoDB Task model (ENHANCED)
+│   │   └── Category.js          # MongoDB Category model (NEW)
 │   ├── routes/
-│   │   ├── authRoutes.js        # Authentication routes
-│   │   └── taskRoutes.js        # Task routes
+│   │   ├── authRoutes.js        # Auth endpoints
+│   │   ├── taskRoutes.js        # Task endpoints (ENHANCED)
+│   │   └── categoryRoutes.js    # Category endpoints (NEW)
+│   ├── services/
+│   │   ├── reminderService.js   # BullMQ reminder jobs (NEW)
+│   │   └── webhookService.js    # Webhook with retry logic (NEW)
 │   ├── utils/
 │   │   └── jwt.js               # JWT utilities
 │   ├── validators/
-│   │   └── schemas.js           # Joi validation schemas
+│   │   └── schemas.js           # Joi validation schemas (ENHANCED)
 │   ├── app.js                   # Express app configuration
 │   └── server.js                # Server startup
 ├── database/
 │   └── setup.sql                # PostgreSQL setup script
-├── .env.example                 # Environment variables template
+├── .env.example                 # Environment variables template (UPDATED)
 ├── .gitignore
-├── package.json
-└── README.md
+├── docker-compose.yml           # Docker orchestration (UPDATED)
+├── Dockerfile
+├── package.json                 # Dependencies (UPDATED)
+└── README.md                    # This file
 ```
+
+---
 
 ## 🏗️ Design Decisions
 
-### 1. **Dual Database Architecture**
-- **PostgreSQL for Users**: Relational database ideal for structured user data with ACID properties
-- **MongoDB for Tasks**: Document-based NoSQL for flexible task schema and scalability
+### 1. Task Categorization Approach
 
-### 2. **Security Measures**
-- Passwords hashed using bcrypt with salt rounds
-- JWT tokens for stateless authentication
-- Protected routes with authentication middleware
-- Environment variables for sensitive data
+**Decision:** User-specific dynamic categories
 
-### 3. **Data Validation**
-- Server-side validation using Joi
-- Validation middleware applied before controller execution
-- Clear error messages for validation failures
+**Rationale:**
+- Each user can create their own categories
+- Categories are stored in MongoDB (flexible schema)
+- No pre-defined categories - users have full control
+- Categories include name, description, and color for better UX
+- Lowercase normalization prevents duplicates
 
-### 4. **Error Handling**
-- Global error handler middleware
-- Consistent error response format
-- HTTP status codes following REST conventions
-- Development vs production error details
+**Alternative Considered:** Pre-defined categories
+- Rejected because different users have different needs
+- A developer might need "Bug Fix", "Feature", "Refactor"
+- A student might need "Homework", "Project", "Exam"
 
-### 5. **Code Organization**
-- MVC pattern for clear separation of concerns
-- Middleware for cross-cutting concerns
-- Modular route definitions
-- Reusable utility functions
+### 2. Tag Management System
 
-## 🧪 Testing the API
+**Decision:** Free-form tags (array of strings)
 
-### Using cURL
+**Rationale:**
+- Maximum flexibility for users
+- No need to pre-create tags
+- Tags automatically populated from usage
+- Can add multiple tags per task (max 10)
+- Indexed for fast filtering
 
-**Register a user:**
-```bash
-curl -X POST http://localhost:5000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"password123"}'
+**Implementation:**
+- Tags stored as array in Task model
+- Separate endpoint to get all used tags
+- Filter by single tag or multiple tags (OR logic)
+
+**Alternative Considered:** Tag entity with relationships
+- Rejected due to added complexity
+- Free-form tags are simpler and more flexible
+
+### 3. Reminder Scheduling System
+
+**Decision:** BullMQ with Redis for job queue
+
+**Rationale:**
+- **Reliability:** Jobs persist in Redis (survive server restarts)
+- **Scalability:** Can handle thousands of scheduled tasks
+- **Retry Logic:** Built-in retry mechanisms
+- **Distributed:** Can run multiple workers
+- **Production-Ready:** Battle-tested in production systems
+
+**How Reminders Work:**
+
+```
+Task Created (dueDate: Dec 31, 15:00)
+         ↓
+Calculate reminder time (14:00)
+         ↓
+Create BullMQ job with delay
+         ↓
+Job stored in Redis
+         ↓
+[Time passes...]
+         ↓
+Job executes at 14:00
+         ↓
+Worker processes job
+         ↓
+Check task still exists & pending
+         ↓
+Log reminder & send webhook
 ```
 
-**Login:**
-```bash
-curl -X POST http://localhost:5000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"password123"}'
+**Cancellation & Rescheduling:**
+- Each task stores its `reminderJobId`
+- On update/delete, job is removed from queue
+- On due date change, old job cancelled, new job created
+- On completion, job cancelled
+
+**Alternative Considered:** Simple setTimeout
+- Rejected because:
+  - Lost on server restart
+  - Memory-intensive for many tasks
+  - No persistence
+  - Not production-ready
+
+### 4. Webhook Retry Logic
+
+**Decision:** Exponential backoff with configurable attempts
+
+**Implementation:**
+```javascript
+Attempt 1: Immediate
+Attempt 2: After 1000ms
+Attempt 3: After 2000ms
+Attempt 4: After 4000ms
 ```
 
-**Create a task (replace TOKEN with your JWT):**
+**Rationale:**
+- Handles temporary network issues
+- Prevents overwhelming failed services
+- Exponential backoff is industry standard
+- Configurable via environment variables
+
+**Configuration:**
+- `WEBHOOK_RETRY_ATTEMPTS`: Number of retries (default: 3)
+- `WEBHOOK_RETRY_DELAY`: Base delay in ms (default: 1000)
+
+**Alternative Considered:** Webhook queue with dead letter queue
+- Too complex for this use case
+- Current solution is simpler and sufficient
+
+### 5. Database Design
+
+**PostgreSQL for Users:**
+- Relational data (users)
+- ACID compliance for auth
+- Structured schema
+
+**MongoDB for Tasks & Categories:**
+- Flexible schema for tags
+- Better for nested data (category reference)
+- Fast queries with indexes
+
+**Redis for Job Queue:**
+- In-memory speed
+- Perfect for ephemeral job queue
+- BullMQ integration
+
+---
+
+## 🧪 Testing Guide
+
+### Test Reminder System
+
+1. Create a task with due date 2 minutes in future:
 ```bash
 curl -X POST http://localhost:5000/api/tasks \
+  -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
   -d '{
-    "title":"My Task",
-    "description":"Task description",
-    "dueDate":"2024-12-31T23:59:59.000Z",
-    "status":"pending"
+    "title": "Test Reminder",
+    "description": "Testing reminder system",
+    "dueDate": "2024-01-15T10:03:00.000Z"
   }'
 ```
 
-### Using Postman
+2. Set `REMINDER_TIME_BEFORE_DUE=1` in .env (1 minute)
 
-1. Import the API endpoints manually or use the examples above
-2. Set up an environment variable for `baseUrl` = `http://localhost:5000`
-3. After login, save the token and use it in Authorization header
-4. Test all endpoints with different scenarios
+3. Watch console - reminder should trigger 1 minute before due date
 
-## 🔒 Security Best Practices
+### Test Webhook Integration
 
-- ✅ Passwords are hashed, never stored in plain text
-- ✅ JWT secret stored in environment variables
-- ✅ Database credentials in environment variables
-- ✅ Input validation on all endpoints
-- ✅ Protected routes require authentication
-- ✅ User can only access their own tasks
-- ✅ CORS enabled for cross-origin requests
+1. Get unique URL from [webhook.site](https://webhook.site/)
 
-## 🐛 Common Issues & Troubleshooting
+2. Set in `.env`:
+```env
+WEBHOOK_URL=https://webhook.site/your-unique-id
+```
 
-### Issue: "Connection refused" error
-**Solution:** Make sure PostgreSQL and MongoDB are running
+3. Create and complete a task:
+```bash
+# Create task
+curl -X POST http://localhost:5000/api/tasks \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Test Webhook",
+    "description": "Testing webhook integration",
+    "dueDate": "2024-12-31T23:59:59.000Z",
+    "status": "pending"
+  }'
 
-### Issue: "Database does not exist"
-**Solution:** Run the setup.sql script or create the database manually
+# Complete task
+curl -X PUT http://localhost:5000/api/tasks/TASK_ID \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"status": "completed"}'
+```
 
-### Issue: "Authentication failed"
-**Solution:** Check your PostgreSQL credentials in .env file
+4. Check webhook.site - you should see the payload
 
-### Issue: "Invalid token"
-**Solution:** Make sure you're including "Bearer " before the token
+### Test Categories & Tags
 
-## 📝 Environment Variables
+```bash
+# Create category
+curl -X POST http://localhost:5000/api/categories \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Work",
+    "description": "Work tasks",
+    "color": "#3B82F6"
+  }'
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| PORT | Server port | 5000 |
-| NODE_ENV | Environment mode | development |
-| PG_HOST | PostgreSQL host | localhost |
-| PG_PORT | PostgreSQL port | 5432 |
-| PG_DATABASE | PostgreSQL database name | taskmanagement |
-| PG_USER | PostgreSQL username | postgres |
-| PG_PASSWORD | PostgreSQL password | - |
-| MONGO_URI | MongoDB connection string | mongodb://localhost:27017/taskmanagement |
-| JWT_SECRET | Secret key for JWT | - |
-| JWT_EXPIRE | JWT expiration time | 7d |
+# Create task with category and tags
+curl -X POST http://localhost:5000/api/tasks \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "API Development",
+    "description": "Build REST API",
+    "dueDate": "2024-12-31T23:59:59.000Z",
+    "category": "CATEGORY_ID",
+    "tags": ["urgent", "backend", "api"]
+  }'
+
+# Filter tasks by tag
+curl -X GET "http://localhost:5000/api/tasks?tags=urgent" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Get all tags
+curl -X GET http://localhost:5000/api/tasks/tags/list \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### Redis Connection Error
+
+**Error:** `❌ Redis connection error`
+
+**Solution:**
+```bash
+# Check if Redis is running
+redis-cli ping
+
+# If not, start Redis
+sudo systemctl start redis  # Linux
+brew services start redis   # Mac
+```
+
+### Reminders Not Working
+
+**Checklist:**
+- [ ] Redis is running
+- [ ] `.env` has `REDIS_HOST` and `REDIS_PORT`
+- [ ] Due date is in the future
+- [ ] `REMINDER_TIME_BEFORE_DUE` is reasonable (e.g., 60)
+
+**Debug:**
+```bash
+# Check Redis
+redis-cli
+> KEYS *
+> EXIT
+
+# Check BullMQ jobs
+npm install -g bull-board
+# Then access http://localhost:3000/queues
+```
+
+### Webhook Not Receiving Data
+
+**Checklist:**
+- [ ] `WEBHOOK_URL` is set in `.env`
+- [ ] URL is accessible (test with curl)
+- [ ] Task status changed to "completed"
+
+**Debug:**
+Check console logs for webhook attempts
+
+---
 
 ## 📦 Dependencies
 
-- **express**: Web framework
-- **mongoose**: MongoDB ODM
-- **pg**: PostgreSQL client
-- **bcryptjs**: Password hashing
-- **jsonwebtoken**: JWT authentication
-- **dotenv**: Environment variables
-- **joi**: Data validation
-- **cors**: Cross-origin resource sharing
+### Production
+- **express** - Web framework
+- **mongoose** - MongoDB ODM
+- **pg** - PostgreSQL client
+- **bcryptjs** - Password hashing
+- **jsonwebtoken** - JWT authentication
+- **dotenv** - Environment variables
+- **joi** - Data validation
+- **cors** - Cross-origin resource sharing
+- **bullmq** - Job queue (NEW)
+- **ioredis** - Redis client (NEW)
+- **axios** - HTTP client for webhooks (NEW)
+- **node-cron** - Task scheduling (NEW)
 
-## 🚀 Deployment Considerations
+### Development
+- **nodemon** - Auto-restart server
 
-For production deployment:
+---
 
-1. Use environment-specific `.env` files
-2. Enable HTTPS
-3. Set `NODE_ENV=production`
-4. Use a process manager (PM2)
-5. Set up database backups
-6. Implement rate limiting
-7. Add logging (Winston, Morgan)
-8. Use a reverse proxy (Nginx)
+## 🚀 Deployment
+
+For production deployment, see [DEPLOYMENT.md](DEPLOYMENT.md)
+
+**Additional considerations for v2.0:**
+- Redis must be available in production
+- Consider managed Redis (AWS ElastiCache, Redis Cloud)
+- Set appropriate webhook retry limits
+- Monitor BullMQ job queue
+- Set up webhook endpoint security
+
+
+## 🎉 Assignment 3 Completion Checklist
+
+- [x] Real-time task reminders implemented
+- [x] BullMQ/Redis job queue setup
+- [x] Reminder cancellation on task update/delete
+- [x] Task categorization system
+- [x] Tag management system
+- [x] Filter tasks by category and tags
+- [x] Webhook integration on task completion
+- [x] Exponential backoff retry logic
+- [x] Updated API documentation
+- [x] Docker Compose with Redis
+- [x] Design decisions documented
+
+---
